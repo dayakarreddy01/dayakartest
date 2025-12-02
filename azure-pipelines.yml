@@ -1,0 +1,28 @@
+
+trigger:
+  branches:
+    include:
+      - main   # Pipeline runs on commits to main branch
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureSubscription: 'AzureServiceConnection'   # Service connection name
+  resourceGroup: 'dayakar'            # Your resource group
+  location: 'North Central US '                            # Azure region
+  logicAppName: 'testalerts'                  # Logic App name
+  templateFile: 'logicapplogicapp.json'        # Path to ARM template
+
+steps:
+- task: AzureResourceManagerTemplateDeployment@3
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(azureSubscription)
+    subscriptionId: '771cd5c1-6b02-4169-a5cc-dc344f0e8941'
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: $(templateFile)
+    deploymentMode: 'Incremental'
