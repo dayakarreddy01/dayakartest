@@ -1,0 +1,107 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workflows_testalerts_name": {
+            "defaultValue": "testalerts",
+            "type": "String"
+        },
+        "connections_teams_4_externalid": {
+            "defaultValue": "/subscriptions/771cd5c1-6b02-4169-a5cc-dc344f0e8941/resourceGroups/dayakar/providers/Microsoft.Web/connections/teams-4",
+            "type": "String"
+        },
+        "connections_office365_13_externalid": {
+            "defaultValue": "/subscriptions/771cd5c1-6b02-4169-a5cc-dc344f0e8941/resourceGroups/dayakar/providers/Microsoft.Web/connections/office365-13",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('workflows_testalerts_name')]",
+            "location": "northcentralus",
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "When_an_HTTP_request_is_received": {
+                            "type": "Request",
+                            "kind": "Http"
+                        }
+                    },
+                    "actions": {
+                        "Post_card_in_a_chat_or_channel": {
+                            "runAfter": {},
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['teams']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "recipient": "v-amalogi@microsoft.com",
+                                    "messageBody": "\n{\n  \"$schema\": \"https://adaptivecards.io/schemas/adaptive-card.json\",\n  \"version\": \"1.2\",\n  \"type\": \"AdaptiveCard\",\n  \"body\": [\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Logic App Alert Triggered!\",\n      \"weight\": \"Bolder\",\n      \"size\": \"Large\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"Details:\",\n      \"wrap\": true\n    },\n    {\n      \"type\": \"TextBlock\",\n      \"text\": \"This is a test message from the Logic App.\",\n      \"wrap\": true\n    }\n  ],\n  \"actions\": [\n    {\n      \"type\": \"Action.OpenUrl\",\n      \"title\": \"Open Azure Portal\",\n      \"url\": \"https://portal.azure.com/\"\n    }\n  ]\n}\n"
+                                },
+                                "path": "/v1.0/teams/conversation/adaptivecard/poster/@{encodeURIComponent('Flow bot')}/location/@{encodeURIComponent('Chat with Flow bot')}"
+                            }
+                        },
+                        "Send_an_email_(V2)": {
+                            "runAfter": {
+                                "Post_card_in_a_chat_or_channel": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['office365-1']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "To": "v-alereddy@microsoft.com",
+                                    "Subject": "Test",
+                                    "Body": "<p class=\"editor-paragraph\">HI @{body('Post_card_in_a_chat_or_channel')}<br>@{body('Post_card_in_a_chat_or_channel')?['id']}<br><br>@{triggerBody()}</p>",
+                                    "Importance": "Normal"
+                                },
+                                "path": "/v2/Mail"
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "teams": {
+                                "id": "/subscriptions/771cd5c1-6b02-4169-a5cc-dc344f0e8941/providers/Microsoft.Web/locations/northcentralus/managedApis/teams",
+                                "connectionId": "[parameters('connections_teams_4_externalid')]",
+                                "connectionName": "teams-4",
+                                "connectionProperties": {}
+                            },
+                            "office365-1": {
+                                "id": "/subscriptions/771cd5c1-6b02-4169-a5cc-dc344f0e8941/providers/Microsoft.Web/locations/northcentralus/managedApis/office365",
+                                "connectionId": "[parameters('connections_office365_13_externalid')]",
+                                "connectionName": "office365-13",
+                                "connectionProperties": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
